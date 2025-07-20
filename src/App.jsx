@@ -16,9 +16,9 @@ function App() {
     order_id: "order_QvMZ726gNnBCfh",
     callback_url: "https://eneqd3r9zrjok.x.pipedream.net/",
     prefill: {
-      name: "Yash Dhokane",
-      email: "yashdhokane12@gmail.com",
-      contact: "9881967037",
+      name: "#",
+      email: "#",
+      contact: "#",
     },
     notes: {
       address: "Razorpay Corporate Office",
