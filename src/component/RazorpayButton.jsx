@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const RazorpayButton = ({
   buttonText = 'Pay Now',
-  buttonClass = '',
-  paymentDetails 
+  buttonClass = 'bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition',
+  paymentDetails,
 }) => {
-  // Dynamically load the Razorpay script
-  React.useEffect(() => {
+  const [amount, setAmount] = useState('');
+
+  useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
@@ -20,34 +21,35 @@ const RazorpayButton = ({
   const displayRazorpay = async (e) => {
     e.preventDefault();
 
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      alert("Please enter a valid amount.");
+      return;
+    }
+
     try {
-      // 1. Create an order by calling your backend API
-      const orderResponse = await fetch('http://localhost:5000/create-order', {
+      const orderResponse = await fetch('https://create-order-payment.vercel.app/create-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: paymentDetails.amount, // Amount in currency subunits
+          amount: numericAmount * 100, 
         }),
       });
 
-      if (!orderResponse.ok) {
-        throw new Error('Failed to create order');
-      }
+      if (!orderResponse.ok) throw new Error('Failed to create order');
 
       const order = await orderResponse.json();
 
-      // 2. Configure Razorpay options using details from props and the created order
       const options = {
-        key: paymentDetails.key, 
-        amount: order.amount, 
-        currency: order.currency, 
+        key: paymentDetails.key,
+        amount: order.amount,
+        currency: order.currency,
         name: paymentDetails.name,
         description: paymentDetails.description,
         image: paymentDetails.image,
-        order_id: order.id, 
-        
+        order_id: order.id,
 
         prefill: {
           name: paymentDetails.prefill.name,
@@ -55,17 +57,15 @@ const RazorpayButton = ({
           contact: paymentDetails.prefill.contact,
         },
         notes: {
-          address: "Your Corporate Office Address"
+          address: "Your Corporate Office Address",
         },
         theme: {
           color: paymentDetails.theme.color,
         },
       };
 
-      // 3. Open the Razorpay payment window
       const paymentObject = new window.Razorpay(options);
       paymentObject.open();
-
     } catch (error) {
       console.error("Payment Error:", error);
       alert("There was an error processing your payment. Please try again.");
@@ -73,9 +73,27 @@ const RazorpayButton = ({
   };
 
   return (
-    <button className={buttonClass} onClick={displayRazorpay}>
-      {buttonText}
-    </button>
+    <form
+      onSubmit={displayRazorpay}
+      className="flex flex-col items-start gap-3 max-w-sm w-full"
+    >
+      <label className="text-sm font-medium text-gray-700">
+        Enter Amount (INR)
+      </label>
+      <input
+        type="number"
+        min="1"
+        step="any"
+        placeholder="e.g. 199"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        required
+      />
+      <button type="submit" className={buttonClass}>
+        {buttonText}
+      </button>
+    </form>
   );
 };
 
